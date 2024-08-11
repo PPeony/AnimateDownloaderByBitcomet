@@ -2,6 +2,7 @@ import os.path
 import shutil
 import subprocess
 import time
+from typing import List
 
 from bs4 import BeautifulSoup
 import requests
@@ -107,25 +108,27 @@ animate_list = [
 ]
 
 
-def read_property():
+def read_property() -> List[Animate]:
     db_path = os.path.join(storage_path, db_file_name)
+    l = []
     with open(db_path, 'r', encoding='utf-8') as file:
         lines = file.readlines()
         for i in range(0, len(lines)):
             line = lines[i].strip()
             if line:
-                real_name, current_chapter = line.split('-', 1)
-                animate_list[i].current_chapter = current_chapter
+                real_name, search_name, fuzzy_name, current_chapter = line.split('-')
+                l.append(Animate(search_name, fuzzy_name, real_name, current_chapter, None, None, None))
     print('read property success')
+    return l
 
 
-def save_property():
+def save_property(l):
     db_path = os.path.join(storage_path, db_file_name)
     with open(db_path, 'w', encoding='utf-8') as file:
-        for obj in animate_list:
-            file.write(f"{obj.real_name}-{increment_string_number(obj.current_chapter)}\n")
+        for obj in l:
+            file.write(f"{obj.real_name}-{obj.search_name}-{','.join(map(str, obj.fuzzy_name))}-{obj.current_chapter}\n")
     print('save property success')
-
+# 夜樱家的大作战-夜樱家-夜樱家,Yozakura-15
 
 def increment_string_number(number_str):
     # 将字符串转换为整数
@@ -308,11 +311,11 @@ def get_all_files(folder_path):
     return file_list
 
 
-read_property()
-get_links()
-download_magnet()
-check_all_task_success()
-move_success_animate()
-save_property()
-for animate in animate_list:
-    print(animate)
+# read_property()
+# get_links()
+# download_magnet()
+# check_all_task_success()
+# move_success_animate()
+# save_property()
+# for animate in animate_list:
+#     print(animate)
