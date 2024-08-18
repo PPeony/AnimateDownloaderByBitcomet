@@ -182,9 +182,10 @@ class EditableTreeview(tk.Frame):
                                 print(f'wait for {file}')
                             all_completed = False
                         else:
-                            animate.status = DownloadStatus.DOWNLOAD_DONE
-                            animate.current_chapter = increment_string_number(animate.current_chapter)
-                            self.update_view(animate, animate.item_id, 'lightyellow')
+                            if animate.status != DownloadStatus.DOWNLOAD_DONE:
+                                animate.status = DownloadStatus.DOWNLOAD_DONE
+                                animate.current_chapter = increment_string_number(animate.current_chapter)
+                                self.update_view(animate, animate.item_id, 'lightyellow')
             if all_completed:
                 return True
         return False
@@ -194,12 +195,13 @@ class EditableTreeview(tk.Frame):
                       animate.status]
         self.tree.item(item_id, values=new_values, tags=(color,))  # Update the treeview with new values
 
-# Main window
-root = tk.Tk()
-root.title("Animate downloader")
-app = EditableTreeview(root)
-app.pack(fill='both', expand=True)
-root.mainloop()
-print('view main over')
-if app.async_task is not None:
-    app.async_task.join()
+if __name__ == '__main__':
+    # Main window
+    root = tk.Tk()
+    root.title("Animate downloader")
+    app = EditableTreeview(root)
+    app.pack(fill='both', expand=True)
+    root.mainloop()
+    print('view main over')
+    if app.async_task is not None:
+        app.async_task.join()
