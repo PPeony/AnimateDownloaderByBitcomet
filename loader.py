@@ -109,6 +109,7 @@ def get_link(animate):
     payload = {}
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'Cookie': 'visitor_test=human',
     }
 
     response = requests.request("GET", url, headers=headers, data=payload)
