@@ -33,15 +33,23 @@ jobs:
       run: |
           pyinstaller -F -w -i ico.ico viewer.py
       # 上传结果为 artifact
-    - name: Upload results
-      uses: actions/upload-artifact@v4
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-          # 结果名(无论写什么，结果始终是zip最后)
-          name: result_exe
-          # 结果文件（可以是单个文件，多个文件）
-          path: dist
-          # 压缩级别(默认0, 0-9, 0 为不压缩)
-          compression-level: 0
-          # 保留时间(默认90)
-          retention-days: 90
-
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    - name: Upload Release Asset
+      id: upload-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ github.workspace }}/test2.zip
+        asset_name: nainiu_upload.zip
+        asset_content_type: application/zip
