@@ -15,7 +15,7 @@ class DownloadStatus(enum.Enum):
     TASK_COMPLETED = 'task completed'
 
 class Animate:
-    def __init__(self, search_name, fuzzy_name: str, real_name, current_chapter, jump_url, magnet, file_name, status=None, item_id=None):
+    def __init__(self, search_name, fuzzy_name: str, real_name, current_chapter, jump_url, magnet, file_name, update_date, fansub_name, status=None, item_id=None):
         self.search_name = search_name  # 网页上用来搜索的关键字
         self.fuzzy_name: str = fuzzy_name  # 搜出来的结果进行模糊匹配，逗号分隔的列表
         self.real_name = real_name  # 本地存储时的真正名字
@@ -25,6 +25,8 @@ class Animate:
         self.file_name = file_name  # 磁力下载的文件名
         self.status = status  # 状态，下载中/已完成
         self.item_id = item_id  # 界面中对应的item_id
+        self.update_date = update_date  # 更新日期
+        self.fansub_name = fansub_name  # 字幕组名字，可选
 
     def __getitem__(self, item):
         return getattr(self, item)
@@ -51,26 +53,38 @@ base_url = 'https://www.comicat.org'
 magnet_prefix = 'magnet:?xt=urn:btih:'
 
 
-def read_property() -> List[Animate]:
-    db_path = os.path.join(storage_path, db_file_name)
+def read_property(db_path) -> List[Animate]:
     l = []
     with open(db_path, 'r', encoding='utf-8') as file:
         lines = file.readlines()
         for i in range(0, len(lines)):
             line = lines[i].strip()
             if line:
-                real_name, search_name, fuzzy_name, current_chapter = line.split('-')
-                l.append(Animate(search_name, fuzzy_name, real_name, current_chapter, None, None, None))
+                vals = line.split('-')
+                real_name = vals[0]
+                search_name = vals[1]
+                fuzzy_name = vals[2]
+                current_chapter = vals[3]
+                update_date = vals[4]
+                fansub_name = None
+                if len(vals) > 5:
+                    fansub_name = vals[5]
+                days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                l.append(
+                    Animate(search_name, fuzzy_name, real_name, current_chapter, None, None, None, days[int(update_date) - 1], fansub_name))
     print('read property success')
     return l
 
 
-def save_property(l):
-    db_path = os.path.join(storage_path, db_file_name)
+def save_property(l, db_path):
+    days = {"Mon": 1, "Tue": 2, "Wed": 3, "Thu": 4, "Fri": 5, "Sat": 6, "Sun": 7}
     with open(db_path, 'w', encoding='utf-8') as file:
         for obj in l:
-            file.write(f"{obj.real_name}-{obj.search_name}-{obj.fuzzy_name}-{obj.current_chapter}\n")
-    print('save property success')
+            s = f"{obj.real_name}-{obj.search_name}-{obj.fuzzy_name}-{obj.current_chapter}-{days[obj.update_date]}-"
+            if obj.fansub_name is not None:
+                s += f"{obj.fansub_name}"
+            file.write(s + " \n")
+
 
 def increment_string_number(number_str):
     # 将字符串转换为整数
@@ -164,6 +178,9 @@ def check(animate: Animate, html_animate_name: str) -> bool:
             fuzzy_name_index = index
     if fuzzy_name_index is None:
         print('animate fuzzy name not found: ' + animate.real_name)
+        return False
+
+    if animate.fansub_name != '' and f'[{animate.fansub_name}]' not in html_animate_name:
         return False
 
     for i in range(fuzzy_name_index, len(html_animate_name) - 1):

@@ -2,9 +2,10 @@ import os
 import threading
 import time
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from typing import List
 
+import loader
 from loader import Animate, save_property, read_property, get_link, download_magnet, DownloadStatus, get_all_files, storage_path, increment_string_number, move_file
 
 
@@ -17,19 +18,20 @@ class EditableTreeview(tk.Frame):
         self.tree_frame.pack(fill=tk.BOTH, expand=True)
         self.animate_list: List[Animate] = []
         self.async_task = None
+        self.db_path = None
 
-        self.id_name_columns = {0: 'search_name', 1: 'fuzzy_name', 2: 'real_name', 3: 'current_chapter', 4: 'magnet', 5: 'status'}
-        self.name_id_columns = {'search_name': 0, 'fuzzy_name': 1, 'real_name': 2, 'current_chapter': 3, 'magnet': 4, 'status': 5}
-        self.can_edit_columns = [self.id_name_columns[0], self.id_name_columns[1], self.id_name_columns[3]]
-        self.tree = ttk.Treeview(self.tree_frame, columns=list(self.id_name_columns.values()))
-        self.tree.heading('#0', text='ID')
-        self.tree.heading('#1', text=self.id_name_columns[0])
-        self.tree.heading('#2', text=self.id_name_columns[1])
-        self.tree.heading('#3', text=self.id_name_columns[2])
-        self.tree.heading('#4', text=self.id_name_columns[3])
-        self.tree.heading('#5', text=self.id_name_columns[4])
-        self.tree.heading('#6', text='status')
-        self.tree['show'] = 'headings'
+        self.id_name_columns = {0: 'search_name', 1: 'fuzzy_name', 2: 'real_name', 3: 'current_chapter', 4: 'fansub_name', 5: 'magnet',
+                                6: 'status', 7: 'update_date'}
+        self.name_id_columns = {'search_name': 0, 'fuzzy_name': 1, 'real_name': 2, 'current_chapter': 3, 'fansub_name': 4, 'magnet': 5,
+                                'status': 6, 'update_date': 7}
+        self.can_edit_columns = [self.id_name_columns[0], self.id_name_columns[1], self.id_name_columns[3], self.id_name_columns[4]]
+        self.tree = ttk.Treeview(self.tree_frame, columns=list(self.id_name_columns.values()), show='headings')
+        for i in range(9):
+            if i == 0:
+                self.tree.heading(f'#{i}', text='ID')
+            else:
+                self.tree.heading(f'#{i}', text=self.id_name_columns[i - 1])
+                self.tree.column(f'#{i}', width=100)
 
         # Increase row height by modifying the row height style
         style = ttk.Style()
@@ -54,13 +56,17 @@ class EditableTreeview(tk.Frame):
         self.save_button = tk.Button(self.button_frame, text="Save", bg="yellow", fg="black", command=self.save_data)
         self.save_button.pack(side=tk.RIGHT, padx=10, pady=10)
 
-        self.start_button = tk.Button(self.button_frame, text="Move", bg="blue", fg="white",
+        self.move_button = tk.Button(self.button_frame, text="Move", bg="blue", fg="white",
                                       command=self.move_file)
-        self.start_button.pack(side=tk.RIGHT, padx=10, pady=10)
+        self.move_button.pack(side=tk.RIGHT, padx=10, pady=10)
 
         self.start_button = tk.Button(self.button_frame, text="Start", bg="green", fg="white",
                                       command=self.process_all_items)
         self.start_button.pack(side=tk.RIGHT, padx=10,  pady=10)
+
+        self.choose_property_button = tk.Button(self.button_frame, text="Choose custom property", bg="green", fg="white",
+                                      command=self.read_custom_property)
+        self.choose_property_button.pack(side=tk.RIGHT, padx=10, pady=10)
 
         self.tree.tag_configure('lightgreen', background='lightgreen')
         self.tree.tag_configure('green', background='green')
@@ -68,12 +74,30 @@ class EditableTreeview(tk.Frame):
         self.tree.tag_configure('lightyellow', background='lightyellow')
 
     def _setup_data(self):
-        self.animate_list = read_property()
+        self.db_path = os.path.join(loader.storage_path, loader.db_file_name)
+        if os.path.exists(self.db_path):
+            self.init_view_data()
+        else:
+            print("配置文件不存在")
+
+    def init_view_data(self):
+        self.animate_list = read_property(self.db_path)
         i = 0
         for e in self.animate_list:
-            self.tree.insert('', 'end', iid=i, values=(f"{e.search_name}", f"{e.fuzzy_name}", f"{e.real_name}", f"{e.current_chapter}"))
+            self.tree.insert('', 'end', iid=i, values=(
+                f"{e.search_name}", f"{e.fuzzy_name}", f"{e.real_name}", f"{e.current_chapter}", f'{e.fansub_name}', '', '', f'{e.update_date}'))
             e.item_id = i
             i += 1
+
+    def read_custom_property(self):
+        file = filedialog.askopenfilename()
+        if file:
+            self.db_path = file
+            for i in self.tree.get_children():
+                self.tree.delete(i)
+            self.init_view_data()
+        else:
+            print("not an available file")
 
     def center_window(self, window, width, height):
         # Get screen width and height
@@ -130,7 +154,7 @@ class EditableTreeview(tk.Frame):
         print('over')
 
     def save_data(self):
-        save_property(self.animate_list)
+        save_property(self.animate_list, self.db_path)
         print("Data saved!")
 
     def move_file(self):
@@ -191,8 +215,8 @@ class EditableTreeview(tk.Frame):
         return False
 
     def update_view(self, animate, item_id, color):
-        new_values = [animate.search_name, animate.fuzzy_name, animate.real_name, animate.current_chapter, animate.magnet,
-                      animate.status]
+        new_values = [animate.search_name, animate.fuzzy_name, animate.real_name, animate.current_chapter, animate.fansub_name, animate.magnet,
+                      animate.status, animate.update_date]
         self.tree.item(item_id, values=new_values, tags=(color,))  # Update the treeview with new values
 
 if __name__ == '__main__':
