@@ -21,7 +21,7 @@ jobs:
           pyinstaller -F -w -i ico.ico viewer.py -n AnimateDownloader.exe
       - uses: actions/upload-artifact@v4
         with:
-          name: Windows_qwiklabs
+          name: AnimateDownloader
           path: dist/AnimateDownloader.exe
 
       - name: create release
