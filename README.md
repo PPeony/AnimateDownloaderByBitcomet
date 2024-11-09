@@ -5,6 +5,13 @@ __操作系统为windows__
 2. 设置界面背景
 3. 删除废弃代码
 
+## V2.1
+新的界面：
+![v2_1_view](https://github.com/PPeony/AnimateDownloaderByBitcomet/blob/master/doc/pic/v2_1_view.PNG)
+1. 界面增加了字幕组选项和周几更新，可以参考db.txt
+2. 界面可以修改配置文件目录
+3. 新增github workflow，可以自动打包为exe
+
 ## V2.0
 1. 增加了界面（ai辅助帮忙）
 2. 旧的代码废弃
@@ -15,10 +22,14 @@ __操作系统为windows__
 ![start](https://github.com/PPeony/AnimateDownloaderByBitcomet/blob/master/doc/pic/%E5%BC%80%E5%A7%8B%E4%BB%BB%E5%8A%A11.PNG)
 浅绿色表示可以获取到链接，深绿色表示获取不到链接。
 
+
 参考文件格式：第一个为动漫的real_name，横杠分隔；第二个为搜索用的名字，这个名字会用在url请求参数上，需要为3个字符以上；第三个名字是html页面中搜索出的文件名字，用于匹配，可以有多个，逗号分隔；最后一个是当前的集数，如果只有1位数，需要以0开头，比如01，02
+
+__v2.1新增：后面可以添加新番更新日期和选择字幕组，详见[db.txt](https://github.com/PPeony/AnimateDownloaderByBitcomet/blob/master/doc/db.txt)__
+
 ```editorconfig
-夜樱家的大作战-夜樱家-夜樱家,Yozakura-19
-不时轻声地以俄语遮羞的邻座艾莉同学-俄语的-俄語,俄语,不时轻声地以俄语遮羞的邻座艾莉同学,不時輕聲地以俄語遮羞的鄰座艾琳同學-07
+夜樱家的大作战-夜樱家-夜樱家,Yozakura-19-3-ANi
+不时轻声地以俄语遮羞的邻座艾莉同学-俄语的-俄語,俄语,不时轻声地以俄语遮羞的邻座艾莉同学,不時輕聲地以俄語遮羞的鄰座艾琳同學-07-3-
 ```
 2. 之后会自动进入下一阶段，开始根据磁力链接调用bitcomet下载，下载完成后，该行会变成黄色，集数自动加一。
 ![download_done](https://github.com/PPeony/AnimateDownloaderByBitcomet/blob/master/doc/pic/%E4%B8%8B%E8%BD%BD%E5%AE%8C%E6%88%90.PNG)
