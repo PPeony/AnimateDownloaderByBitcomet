@@ -8,7 +8,7 @@ __操作系统为windows__
 ## V2.1
 新的界面：
 ![v2_1_view](https://github.com/PPeony/AnimateDownloaderByBitcomet/blob/master/doc/pic/v2_1_view.PNG)
-1. 界面增加了字幕组选项和周几更新，可以参考db.txt
+1. 界面增加了字幕组选项和周几更新，可以参考[db.txt](https://github.com/PPeony/AnimateDownloaderByBitcomet/blob/master/doc/db.txt)
 2. 界面可以修改配置文件目录
 3. 新增github workflow，可以自动打包为exe
 
