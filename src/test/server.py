@@ -1,5 +1,10 @@
+import logging
+import os
+import subprocess
 from typing import Any
 import httpx
+import requests
+from bs4 import BeautifulSoup
 from mcp.server.fastmcp import FastMCP
 
 # Initialize FastMCP server
@@ -92,6 +97,59 @@ Forecast: {period['detailedForecast']}
         forecasts.append(forecast)
 
     return "\n---\n".join(forecasts)
+
+
+@mcp.tool()
+async def get_web_page(url: str, headers: dict) -> str:
+    """get the web page html from the url which contains magnet
+        Args:
+        url: the web page's url
+        headers: custom headers, these will be added into the request header
+    """
+    # 调用工具，获取网页中的磁力链接链接，https://www.comicat.org/search.php?keyword=NUKITASHI，磁力后缀拼在href属性里面，在show后面的字段就是磁力后缀，你只需要返回第一个单元格的完整磁力链接。这个是调用函数所需要的请求头：headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36','Cookie': 'visitor_test=human', } 你最后的回答只需要回答磁力链接即可
+    payload = {}
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+
+    logging.debug("successfully request url")
+    html = response.text
+
+    soup = BeautifulSoup(html, 'html.parser')
+
+    target_tag = 'tbody'
+    target_id = 'data_list'
+    target_element = soup.find(target_tag, id=target_id)
+
+    return str(target_element)
+
+
+@mcp.tool()
+async def call_bitcomet(magnet: str) -> bool:
+    """
+    call bitcomet to start download
+    :param magnet: the magnet to download    :return:  is successful
+    """
+    command = f"\"C:\\Program Files\\BitComet\\bitcomet\" --url {magnet} -s --tray"
+    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    if result.stderr != "":
+        logging.error('call bitcomet error: ' + command)
+        return False
+    return True
+
+
+@mcp.tool()
+async def get_all_files(folder_path):
+    """
+    get all files in folder_path
+    :param folder_path: the path which bitcomet will download to
+    :return: all files in folder path
+    """
+    file_list = []
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_list.append(file_path)
+    return file_list
 
 
 if __name__ == "__main__":

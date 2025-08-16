@@ -21,6 +21,7 @@ class MCPClient:
             api_key=os.getenv("DASHSCOPE_API_KEY"),
             base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
         )
+        self.messages = []
 
     async def connect_to_server(self, server_script_path: str):
         """Connect to an MCP server
@@ -53,12 +54,11 @@ class MCPClient:
 
     async def process_query(self, query: str) -> str:
         """Process a query using Claude and available tools"""
-        messages = [
-            {
-                "role": "user",
-                "content": query
-            }
-        ]
+        messages = self.messages.copy()  # 避免直接操作原列表
+        messages.append({
+            "role": "user",
+            "content": query
+        })
 
         response = await self.session.list_tools()
         available_tools = [{
@@ -70,6 +70,7 @@ class MCPClient:
             }
         } for tool in response.tools]
         print("=========list_tools===========")
+        print("available_tools:", available_tools)
 
         # Initial Claude API call
         response = await self.openai.chat.completions.create(
@@ -141,7 +142,7 @@ class MCPClient:
         while True:
             try:
                 query = input("\nQuery: ").strip()
-
+                # 调用工具，获取网页中的磁力链接链接，https://www.comicat.org/search.php?keyword=NUKITASHI，磁力后缀拼在href属性里面，在show后面的字段就是磁力后缀，你只需要返回第一个单元格的完整磁力链接
                 if query.lower() == 'quit':
                     break
 

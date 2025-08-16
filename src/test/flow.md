@@ -1,8 +1,8 @@
 start
 loop json array:
-    request(mcp) get html and send to llm
-    llm parse the first magnet
-    llm call tool again, tool will use bitcomet to download
+    request(mcp) get html and send to llm-d
+    llm parse the first magnet-d
+    llm call tool again, tool will use bitcomet to download-d
     the platform will monitor added files
     (message will write down all these operation)
 push button or scheduler, call file mcp, only move files which are successfully downloaded, update json file instantly
