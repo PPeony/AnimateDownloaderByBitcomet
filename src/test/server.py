@@ -1,7 +1,8 @@
 import logging
 import os
 import subprocess
-from typing import Any
+from pathlib import Path
+from typing import Any, Dict, List
 import httpx
 import requests
 from bs4 import BeautifulSoup
@@ -13,6 +14,13 @@ mcp = FastMCP("weather")
 # Constants
 NWS_API_BASE = "https://api.weather.gov"
 USER_AGENT = "weather-app/1.0"
+
+logger = logging.getLogger(__name__)
+file_handler = logging.FileHandler('server.log', encoding='utf-8')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.setLevel(logging.DEBUG)
 
 
 async def make_nws_request(url: str) -> dict[str, Any] | None:
@@ -111,7 +119,7 @@ async def get_web_page(url: str, headers: dict) -> str:
 
     response = requests.request("GET", url, headers=headers, data=payload)
 
-    logging.debug("successfully request url")
+    logger.debug("successfully request url")
     html = response.text
 
     soup = BeautifulSoup(html, 'html.parser')
@@ -138,18 +146,41 @@ async def call_bitcomet(magnet: str) -> bool:
 
 
 @mcp.tool()
-async def get_all_files(folder_path):
+async def get_all_files(folder_path: str) -> dict[str, list[dict[str, str | bool]]]:
     """
     get all files in folder_path
     :param folder_path: the path which bitcomet will download to
-    :return: all files in folder path
+    :return: a list of dict in the folder_path, each dict has 4 keys, name: the file or folder name, is_dir, is_file,
+    path: the full path
     """
-    file_list = []
-    for root, dirs, files in os.walk(folder_path):
-        for file in files:
-            file_path = os.path.join(root, file)
-            file_list.append(file_path)
-    return file_list
+    dir_path = Path(folder_path)
+    if not dir_path.exists():
+        return {}
+    if not dir_path.is_dir():
+        return {}
+
+    # iterdir() 遍历当前目录，不递归
+    items = []
+    for item in dir_path.iterdir():
+        items.append({
+            'name': item.name,
+            'is_dir': item.is_dir(),
+            'is_file': item.is_file(),
+            'path': str(item)  # 完整路径
+        })
+    logger.debug(items)
+    res = {'result': items}
+    return res
+
+
+@mcp.tool()
+async def get_name_hash_res(name: str) -> int:
+    """
+    get the hash result from name
+    :param name: this will be used to hash
+    :return: the hash result
+    """
+    return hash(name)
 
 
 if __name__ == "__main__":
