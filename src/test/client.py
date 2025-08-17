@@ -78,7 +78,8 @@ class MCPClient:
             model="qwen-max",
             # max_tokens=1000,
             messages=messages,
-            tools=available_tools
+            tools=available_tools,
+            parallel_tool_calls=True
         )
         print("response:", response)
         # Process response and handle tool calls
@@ -200,7 +201,8 @@ class MCPClient:
                     # model="gpt-4o-mini",
                     # max_tokens=1000,
                     messages=self.messages,
-                    tools=available_tools
+                    tools=available_tools,
+                    parallel_tool_calls=True
                 )
                 assistant_message = response.choices[0].message
                 print(f"==================> LLM Response: {assistant_message}")
