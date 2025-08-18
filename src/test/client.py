@@ -9,6 +9,8 @@ from mcp.client.stdio import stdio_client
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 
+from src.test.prompt import PROMPT
+
 load_dotenv()  # load environment variables from .env
 
 
@@ -242,14 +244,34 @@ class MCPClient:
 
                 # 如果响应是最终答案（不包含工具调用）
                 else:
-                    final_content = assistant_message.content
+                    step_content = assistant_message.content
 
                     # 如果模型返回了最终答案，将其添加到历史并退出
-                    if final_content:
-                        final_text_parts.append(final_content)
+                    if step_content:
+                        final_text_parts.append(step_content)
                         self.messages.append(assistant_message)
+                    step_answer_key = "Step Answer:"
+                    final_answer_key = "Final Answer:"
 
-                    print("No more tool calls. Exiting loop.")
+                    if step_answer_key in step_content:
+                        index = step_content.find(step_answer_key)
+                        if index != -1:
+                            result = step_content[index + len(step_answer_key):]  # 取关键字之后的所有内容
+                            print("get_step_answer:", result.strip())  # .strip() 去除前后空白
+                            continue
+                        else:
+                            print(f"{step_answer_key} not found")
+
+                    if final_answer_key in step_content:
+                        index = step_content.find(final_answer_key)
+                        if index != -1:
+                            result = step_content[index + len(final_answer_key):]  # 取关键字之后的所有内容
+                            print("get_final_answer_key:", result.strip())  # .strip() 去除前后空白
+                            break
+                        else:
+                            print(f"{final_answer_key} not found")
+                            break
+                    print("No more messages. Exiting loop.")
                     break  # 退出循环
 
             except Exception as e:
@@ -279,27 +301,7 @@ class MCPClient:
     async def chat(self):
         print("\nMCP Client Started!")
         print("Type your queries or 'quit' to exit.")
-        response = await self.process_query("你必须用工具完成以下几个事情。"
-                                            "1. 读取配置文件，位置在D:\\animate\\animate_storage.json."
-                                            "2. 第一步会得到一个json数组，你需要在网页上面搜索json数组中每个元素的磁力链接。"
-                                            "链接你需要进行拼接，https://www.comicat.org/search.php?keyword={search_name} "
-                                            "search_name就是第一步读取的配置文件里面的search_name。"
-                                            "工具会返回页面上的部分html信息，磁力链接信息在href属性里面，在show后面的字段就是磁力后缀。"
-                                            "这个是调用函数所需要的请求头："
-                                            "headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36','Cookie': 'visitor_test=human', }"
-                                            "注意原始的配置文件里面还包含chapter，这个是视频的集数，在搜索网页磁力链接的时候，要下载正确的集数。如果没有对应的磁力链接，在最终结果中要展示出来。"
-                                            "配置文件里面有多个元素，所以这个步骤你需要调用工具循环多次。"
-                                            "你需要记录最后成功找到磁力链接的视频的名字，和他的磁力链接。如果没有找到磁力链接，那填空就可以。"
-                                            "你需要生成一个json，类似{name:'xxx',magnet: 'xxx', chapter:'xxx'}，最后结果是一个json数组"
-                                            "3. 根据我们上一步拿到的磁力链接，调用bitcomet工具，下载文件。这一步你也需要循环调用工具多次，一次调用工具只能下载一个文件。"
-                                            "4. 调用工具，扫描 D:\\animate 文件夹，查看是否有新增的bitcomet下载文件。"
-                                            "这个下载文件的文件名字前半部分应该类似于我们刚才获取到的文件的文件名。"
-                                            "新增的下载文件的文件名以.bc!为结尾。注意名字和集数都要匹配。如果有的话，你需要返回这个文件夹的完整路径。"
-                                            "这一步只需要调用一次工具，工具会返回文件夹内所有的文件内容。"
-                                            "最终你需要生成的json需要包含下载中的文件路径。格式类似下面"
-                                            " Answer:[{\"name\":\"xxx\",\"magnet\": \"xxx\", \"chapter\":\"xxx\",\"path\":\"xxx\"},"
-                                            "{\"name\":\"xxx2\",\"magnet\": \"xxx2\", \"chapter\":\"xxx2\",\"path\":\"xxx2\"}]"
-                                            "注意最终你需要返回的只有上述结构。即 Answer:json数组。不要返回多余字符串。")
+        response = await self.process_query_loop(PROMPT)
 
         print("\n:response:\n" + response)
 
