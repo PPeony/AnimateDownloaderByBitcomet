@@ -174,6 +174,14 @@ async def get_all_files(folder_path: str) -> dict[str, list[dict[str, str | bool
 
 
 @mcp.tool()
+async def get_file_content(path: str) -> str:
+    with open(path, 'r', encoding='utf-8') as file:
+        content = file.read()
+
+    return content
+
+
+@mcp.tool()
 async def get_name_hash_res(name: str) -> int:
     """
     get the hash result from name
