@@ -54,122 +54,6 @@ class MCPClient:
         tools = response.tools
         print("\nConnected to server with tools:", [tool.name for tool in tools])
 
-    async def process_query(self, query: str) -> str:
-        """Process a query using Claude and available tools"""
-        messages = self.messages.copy()  # 避免直接操作原列表
-        messages.append({
-            "role": "user",
-            "content": query
-        })
-
-        response = await self.session.list_tools()
-        available_tools = [{
-            "type": "function",
-            "function": {
-                "name": tool.name,
-                "description": tool.description,
-                "parameters": tool.inputSchema
-            }
-        } for tool in response.tools]
-        print("=========list_tools===========")
-        print("available_tools:", available_tools)
-
-        # Initial Claude API call
-        response = await self.openai.chat.completions.create(
-            # model="gpt-4o-mini",
-            model="qwen-max",
-            # max_tokens=1000,
-            messages=messages,
-            tools=available_tools,
-            parallel_tool_calls=True
-        )
-        print("response:", response)
-        # Process response and handle tool calls
-        tool_results = []
-        final_text = []
-
-        assistant_message = response.choices[0].message
-
-        cnt = 0
-        if assistant_message.tool_calls:
-            for tool_call in assistant_message.tool_calls:
-                print(f">>>>>>>>>>>>>>loop{cnt}")
-                tool_name = tool_call.function.name
-                tool_args = json.loads(tool_call.function.arguments)
-
-                # Execute tool call
-                result = await self.session.call_tool(tool_name, tool_args)
-                tool_result_text = result.content[0].text
-                tool_results.append({"call": tool_name, "result": tool_result_text})
-                final_text.append(f"[Calling tool {tool_name} with args {tool_args}]")
-                final_text.append(f"Tool result: {tool_result_text}")
-
-                # ✅ 将工具调用和结果添加到消息历史
-                messages.append({
-                    "role": "assistant",
-                    "content": None,
-                    "tool_calls": [tool_call]
-                })
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": tool_result_text
-                })
-
-                print(f"Tool {tool_name} returned: {result}")
-                print("messages", messages)
-                # Get next response from OpenAI
-                completion = await self.openai.chat.completions.create(
-                    model="qwen-max",
-                    # max_tokens=1000,
-                    # model="gpt-4o-mini",
-                    messages=messages,
-                )
-                print("completion", completion)
-                if isinstance(completion.choices[0].message.content, (dict, list)):
-                    final_text.append(str(completion.choices[0].message.content))
-                else:
-                    final_text.append(completion.choices[0].message.content)
-
-        else:
-            if isinstance(assistant_message.content, (dict, list)):
-                final_text.append(str(assistant_message.content))
-            else:
-                final_text.append(assistant_message.content)
-
-        self.messages.append({
-            "role": "user",
-            "content": query
-        })
-        self.messages.append({
-            "role": "assistant",
-            "content": assistant_message.content,
-            "tool_calls": assistant_message.tool_calls
-        })
-
-        for tool_call in (assistant_message.tool_calls or []):
-            tool_result = next((r for r in tool_results if r["call"] == tool_call.function.name), None)
-            if tool_result:
-                self.messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": tool_result["result"]
-                })
-                # 注意：这里假设 tool_call.id 是由 OpenAI 生成的，实际中可能需要映射
-                # 若不一致，建议手动维护 call_id 映射表
-
-            # 最终模型回复（如果有）
-        if assistant_message.tool_calls:
-            final_content = completion.choices[0].message.content
-            self.messages.append({
-                "role": "assistant",
-                "content": final_content
-            })
-
-        print("====>current message: ", self.messages)
-
-        return "\n".join(final_text)
-
     async def process_query_loop(self, query: str) -> str:
         """Process a query using Claude and available tools"""
         # 1. 初始化，将用户查询添加到消息历史
@@ -201,7 +85,7 @@ class MCPClient:
                 response = await self.openai.chat.completions.create(
                     model="qwen-max",
                     # model="gpt-4o-mini",
-                    # max_tokens=1000,
+                    max_tokens=2000,
                     messages=self.messages,
                     tools=available_tools,
                     parallel_tool_calls=True
@@ -279,31 +163,13 @@ class MCPClient:
                 break  # 出现错误时也退出循环
 
         return "\n".join(final_text_parts)
-    async def chat_loop(self):
-        """Run an interactive chat loop"""
-        print("\nMCP Client Started!")
-        print("Type your queries or 'quit' to exit.")
-
-        while True:
-            try:
-                query = input("\nQuery: ").strip()
-                # 调用工具，获取网页中的磁力链接链接，https://www.comicat.org/search.php?keyword=NUKITASHI，磁力后缀拼在href属性里面，在show后面的字段就是磁力后缀，你只需要返回第一个单元格的完整磁力链接
-                if query.lower() == 'quit':
-                    break
-
-                response = await self.process_query(query)
-                print("\n:response:\n" + response)
-
-            except Exception as e:
-                print(f"\nError: {str(e)}")
-
 
     async def chat(self):
         print("\nMCP Client Started!")
         print("Type your queries or 'quit' to exit.")
         response = await self.process_query_loop(PROMPT)
 
-        print("\n:response:\n" + response)
+        print("\n[response]:\n" + response)
 
     async def cleanup(self):
         """Clean up resources"""
@@ -318,7 +184,6 @@ async def main():
     client = MCPClient()
     try:
         await client.connect_to_server(sys.argv[1])
-        # await client.chat_loop()
         await client.chat()
     finally:
         await client.cleanup()

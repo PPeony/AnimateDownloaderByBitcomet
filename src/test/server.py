@@ -109,7 +109,8 @@ Forecast: {period['detailedForecast']}
 
 @mcp.tool()
 async def get_web_page(url: str, headers: dict) -> str:
-    """get the web page html from the url which contains magnet
+    """get the web page html from the url which contains magnet.
+        Notice: When the number of characters on a webpage exceeds 2000, it will be truncated
         Args:
         url: the web page's url
         headers: custom headers, these will be added into the request header
@@ -128,7 +129,7 @@ async def get_web_page(url: str, headers: dict) -> str:
     target_id = 'data_list'
     target_element = soup.find(target_tag, id=target_id)
 
-    return str(target_element)
+    return str(target_element)[:2000]
 
 
 @mcp.tool()
@@ -140,9 +141,9 @@ async def call_bitcomet(magnet: str) -> bool:
     command = f"\"C:\\Program Files\\BitComet\\bitcomet\" --url {magnet} -s --tray"
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     if result.stderr != "":
-        logging.error('call bitcomet error: ' + command)
+        logging.debug('call bitcomet error: ' + command)
         return False
-    logging.error(f'Successfully call bitcomet url:{magnet}')
+    logging.debug(f'Successfully call bitcomet url:{magnet}')
     return True
 
 
