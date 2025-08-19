@@ -1,6 +1,7 @@
 import logging
 import os
 import subprocess
+import time
 from pathlib import Path
 from typing import Any, Dict, List
 import httpx
@@ -128,6 +129,8 @@ async def get_web_page(url: str, headers: dict) -> str:
     target_tag = 'tbody'
     target_id = 'data_list'
     target_element = soup.find(target_tag, id=target_id)
+    # 防止请求太频繁
+    time.sleep(1)
 
     return str(target_element)[:2000]
 

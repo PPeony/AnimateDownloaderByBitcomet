@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 from src.test.prompt import PROMPT
 
-load_dotenv()  # load environment variables from .env
+load_dotenv()
 
 
 class MCPClient:
@@ -84,7 +84,6 @@ class MCPClient:
                 print(f"==================> Calling LLM with messages: {self.messages}")
                 response = await self.openai.chat.completions.create(
                     model="qwen-max",
-                    # model="gpt-4o-mini",
                     max_tokens=2000,
                     messages=self.messages,
                     tools=available_tools,
@@ -162,6 +161,7 @@ class MCPClient:
                 print(f"An error occurred in the loop: {e}")
                 break  # 出现错误时也退出循环
 
+        print("[all messages]: ", self.messages)
         return "\n".join(final_text_parts)
 
     async def chat(self):
