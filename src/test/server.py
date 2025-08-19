@@ -119,7 +119,7 @@ async def get_web_page(url: str, headers: dict) -> str:
 
     response = requests.request("GET", url, headers=headers, data=payload)
 
-    logger.debug("successfully request url")
+    logger.debug(f"successfully request url: {url}")
     html = response.text
 
     soup = BeautifulSoup(html, 'html.parser')
@@ -142,6 +142,7 @@ async def call_bitcomet(magnet: str) -> bool:
     if result.stderr != "":
         logging.error('call bitcomet error: ' + command)
         return False
+    logging.error(f'Successfully call bitcomet url:{magnet}')
     return True
 
 

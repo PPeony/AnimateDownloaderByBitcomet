@@ -8,7 +8,7 @@ Action：
 Step 1: 获取配置信息。配置文件位置在 D:\\animate\\animate_storage.json
 Action: 调用工具，获取文件中的信息，文件里面是一个json字符串。
 Reasoning: 这是第一步，你需要拿到文件里面的字符串后，才能进行第二步操作
-Action Input: 配置文件的路径
+Action Input: 配置文件的路径：D:\\animate\\animate_storage.json
 Expected output: 预期输出使用下面的格式：
 ```
 Step Answer: [json]
@@ -19,6 +19,7 @@ Action：通过第一步得到的json数组，对数组中每个元素，在网�
 search_name就是第一步读取的配置文件里面的search_name。
 工具会返回页面上的部分html信息，磁力链接信息在href属性里面，在show后面的字段就是磁力后缀。链接你需要进行拼接磁力链接的前缀。
 注意原始的配置文件里面还包含chapter，这个是视频的集数，在搜索网页磁力链接的时候，要下载正确的集数。如果没有对应的磁力链接，在最终结果中要展示出来。
+网页中有一列记录了文件大小，尽量不要选择文件大小大于1G的文件，除非只有这个文件。
 你需要记录最后成功找到磁力链接的视频的名字，和他的磁力链接。如果没有找到磁力链接，那填空字符串就可以。
 Reasoning：获取了磁力链接之后，下一步才能下载。
 Action Input: 第一步的json数组中的每个元素的 search_name，和请求头{'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36','Cookie': 'visitor_test=human', }
