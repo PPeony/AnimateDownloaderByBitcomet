@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 from typing import Optional
 from contextlib import AsyncExitStack
@@ -13,6 +14,13 @@ from src.test.prompt import PROMPT
 
 load_dotenv()
 
+
+logger = logging.getLogger(__name__)
+file_handler = logging.FileHandler('client.log', encoding='utf-8')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.setLevel(logging.INFO)
 
 class MCPClient:
     def __init__(self):
@@ -52,7 +60,7 @@ class MCPClient:
         # List available tools
         response = await self.session.list_tools()
         tools = response.tools
-        print("\nConnected to server with tools:", [tool.name for tool in tools])
+        logger.info("\nConnected to server with tools:", [tool.name for tool in tools])
 
     async def process_query_loop(self, query: str) -> str:
         """Process a query using Claude and available tools"""
@@ -74,14 +82,14 @@ class MCPClient:
                 "parameters": tool.inputSchema
             }
         } for tool in response.tools]
-        print("=========list_tools===========")
-        print("available_tools:", available_tools)
+        logger.info("=========list_tools===========")
+        logger.info("available_tools:", available_tools)
 
         # 2. 主循环
         while True:
             try:
                 # 2a. 调用 LLM，发送完整的消息历史
-                print(f"==================> Calling LLM with messages: {self.messages}")
+                logger.info(f"==================> Calling LLM with messages: {self.messages}")
                 response = await self.openai.chat.completions.create(
                     model="qwen-max",
                     max_tokens=2000,
@@ -90,7 +98,7 @@ class MCPClient:
                     parallel_tool_calls=True
                 )
                 assistant_message = response.choices[0].message
-                print(f"==================> LLM Response: {assistant_message}")
+                logger.info(f"==================> LLM Response: {assistant_message}")
 
                 # 2b. 处理 LLM 响应
 
@@ -105,7 +113,7 @@ class MCPClient:
                         tool_name = tool_call.function.name
                         tool_args = json.loads(tool_call.function.arguments)
 
-                        print(f"Executing tool: {tool_name} with args: {tool_args}")
+                        logger.info(f"Executing tool: {tool_name} with args: {tool_args}")
 
                         # 执行工具调用
                         result = await self.session.call_tool(tool_name, tool_args)
@@ -140,36 +148,36 @@ class MCPClient:
                         index = step_content.find(step_answer_key)
                         if index != -1:
                             result = step_content[index + len(step_answer_key):]  # 取关键字之后的所有内容
-                            print("get_step_answer:", result.strip())  # .strip() 去除前后空白
+                            logger.info("get_step_answer:", result.strip())  # .strip() 去除前后空白
                             continue
                         else:
-                            print(f"{step_answer_key} not found")
+                            logger.info(f"{step_answer_key} not found")
 
                     if final_answer_key in step_content:
                         index = step_content.find(final_answer_key)
                         if index != -1:
                             result = step_content[index + len(final_answer_key):]  # 取关键字之后的所有内容
-                            print("get_final_answer_key:", result.strip())  # .strip() 去除前后空白
+                            logger.info("get_final_answer_key:", result.strip())  # .strip() 去除前后空白
                             break
                         else:
-                            print(f"{final_answer_key} not found")
+                            logger.info(f"{final_answer_key} not found")
                             break
-                    print("No more messages. Exiting loop.")
+                    logger.info("No more messages. Exiting loop.")
                     break  # 退出循环
 
             except Exception as e:
-                print(f"An error occurred in the loop: {e}")
+                logger.info(f"An error occurred in the loop: {e}")
                 break  # 出现错误时也退出循环
 
-        print("[all messages]: ", self.messages)
+        logger.info("[all messages]: ", self.messages)
         return "\n".join(final_text_parts)
 
     async def chat(self):
-        print("\nMCP Client Started!")
-        print("Type your queries or 'quit' to exit.")
+        logger.info("\nMCP Client Started!")
+        logger.info("Type your queries or 'quit' to exit.")
         response = await self.process_query_loop(PROMPT)
 
-        print("\n[response]:\n" + response)
+        logger.info("\n[response]:\n" + response)
 
     async def cleanup(self):
         """Clean up resources"""
@@ -178,7 +186,7 @@ class MCPClient:
 
 async def main():
     if len(sys.argv) < 2:
-        print("Usage: python client.py <path_to_server_script>")
+        logger.info("Usage: python client.py <path_to_server_script>")
         sys.exit(1)
 
     client = MCPClient()
