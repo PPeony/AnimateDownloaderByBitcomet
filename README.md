@@ -4,7 +4,7 @@ __操作系统为windows__
 ## 正在开发
 1. flet界面
 2. llm实现agent完成搜索和下载。现在还不准确，计划使用langgraph+多agent提高准确性。
-
+![flet_view](https://github.com/PPeony/AnimateDownloaderByBitcomet/blob/use_mcp/doc/pic/flet-view.png)
 
 
 ## V2.1
