@@ -16,11 +16,11 @@ load_dotenv()
 
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 file_handler = logging.FileHandler('client.log', encoding='utf-8')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
-logger.setLevel(logging.INFO)
 
 class MCPClient:
     def __init__(self):
@@ -60,7 +60,7 @@ class MCPClient:
         # List available tools
         response = await self.session.list_tools()
         tools = response.tools
-        logger.info("\nConnected to server with tools:", [tool.name for tool in tools])
+        # logger.info("\nConnected to server with tools:", [tool.name for tool in tools])
 
     async def process_query_loop(self, query: str) -> str:
         """Process a query using Claude and available tools"""
@@ -83,7 +83,7 @@ class MCPClient:
             }
         } for tool in response.tools]
         logger.info("=========list_tools===========")
-        logger.info("available_tools:", available_tools)
+        logger.info(f"available_tools:{available_tools}")
 
         # 2. 主循环
         while True:
@@ -104,7 +104,7 @@ class MCPClient:
 
                 # 如果响应包含工具调用
                 if assistant_message.tool_calls:
-
+                    logger.info("tool_calls")
                     # 将助手的工具调用消息添加到历史
                     self.messages.append(assistant_message)
 
@@ -135,6 +135,7 @@ class MCPClient:
 
                 # 如果响应是最终答案（不包含工具调用）
                 else:
+                    logger.info("check_answer")
                     step_content = assistant_message.content
 
                     # 如果模型返回了最终答案，将其添加到历史并退出
@@ -148,7 +149,7 @@ class MCPClient:
                         index = step_content.find(step_answer_key)
                         if index != -1:
                             result = step_content[index + len(step_answer_key):]  # 取关键字之后的所有内容
-                            logger.info("get_step_answer:", result.strip())  # .strip() 去除前后空白
+                            logger.info(f"get_step_answer:{result.strip()}")  # .strip() 去除前后空白
                             continue
                         else:
                             logger.info(f"{step_answer_key} not found")
@@ -157,7 +158,7 @@ class MCPClient:
                         index = step_content.find(final_answer_key)
                         if index != -1:
                             result = step_content[index + len(final_answer_key):]  # 取关键字之后的所有内容
-                            logger.info("get_final_answer_key:", result.strip())  # .strip() 去除前后空白
+                            logger.info(f"get_final_answer_key:{result.strip()}")  # .strip() 去除前后空白
                             break
                         else:
                             logger.info(f"{final_answer_key} not found")
@@ -169,7 +170,7 @@ class MCPClient:
                 logger.info(f"An error occurred in the loop: {e}")
                 break  # 出现错误时也退出循环
 
-        logger.info("[all messages]: ", self.messages)
+        logger.info(f"[all messages]: {self.messages}")
         return "\n".join(final_text_parts)
 
     async def chat(self):
@@ -177,7 +178,7 @@ class MCPClient:
         logger.info("Type your queries or 'quit' to exit.")
         response = await self.process_query_loop(PROMPT)
 
-        logger.info("\n[response]:\n" + response)
+        print("\n[response]:\n" + response)
 
     async def cleanup(self):
         """Clean up resources"""
@@ -189,12 +190,14 @@ async def main():
         logger.info("Usage: python client.py <path_to_server_script>")
         sys.exit(1)
 
+    logger.info("=====start client=====")
     client = MCPClient()
     try:
         await client.connect_to_server(sys.argv[1])
         await client.chat()
     finally:
         await client.cleanup()
+        logger.info("===end client===")
 
 
 if __name__ == "__main__":

@@ -7,6 +7,8 @@ import json
 import os
 import time
 from threading import Thread
+
+
 # https://flet.dev/docs/controls/view/
 
 # 模拟 download 函数（你可以替换成真实的下载逻辑）
@@ -44,7 +46,7 @@ class AnimeTask:
     row: ft.DataRow
     timer: int = 0
     max_timer: int = 300  # 最多检查 300 秒
-    interval: int = 1   # 每 60 秒检查一次
+    interval: int = 1  # 每 60 秒检查一次
     stop_event: Event = None
 
 
@@ -247,7 +249,7 @@ def main(page: ft.Page):
         call_ai_btn.update()
 
         log("🚀 正在启动 AI 任务：python src/test/client.py src/test/server.py")
-        raise Exception("test")
+
         # 启动 client.py 并传入 server.py 作为参数
         try:
             # 假设你在项目根目录运行，路径是相对于当前目录
@@ -255,16 +257,44 @@ def main(page: ft.Page):
                 ["python", "src/test/client.py", "src/test/server.py"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                encoding="utf-8",
                 cwd=os.getcwd()  # 可选：确保工作目录正确
             )
 
             # 实时读取 stdout（可选：如果你想实时输出日志）
             def read_output():
-                for line in process.stdout:
-                    log(f"📤 {line.strip()}")
-                for line in process.stderr:
-                    log(f"❌ {line.strip()}")
+                # 读取 stdout
+                try:
+                    for line in process.stdout:
+                        try:
+                            text = line.decode("utf-8", errors="replace").strip()
+                            log(f"📤 {text}")
+                        except:
+                            # 如果 UTF-8 失败，尝试 GBK（常见于中文 Windows）
+                            try:
+                                text = line.decode("gbk", errors="replace").strip()
+                                log(f"📤 {text}")
+                            except:
+                                text = line.decode("latin1", errors="replace").strip()
+                                log(f"📤 {text}")
+                except Exception as e:
+                    log(f"❌ 读取 stdout 异常：{str(e)}")
+
+                # 读取 stderr
+                try:
+                    for line in process.stderr:
+                        try:
+                            text = line.decode("utf-8", errors="replace").strip()
+                            log(f"❌ {text}")
+                        except:
+                            try:
+                                text = line.decode("gbk", errors="replace").strip()
+                                log(f"❌ {text}")
+                            except:
+                                text = line.decode("latin1", errors="replace").strip()
+                                log(f"❌ {text}")
+                except Exception as e:
+                    log(f"❌ 读取 stderr 异常：{str(e)}")
+
                 process.wait()
 
             # 启动日志读取线程（非阻塞）
@@ -274,7 +304,7 @@ def main(page: ft.Page):
             log(f"❌ 启动 AI 任务失败：{str(ex)}")
             call_ai_btn.disabled = False
             call_ai_btn.text = "Call AI"
-            call_ai_btn.icon = ft.icons.ROCKET_LAUNCH
+            call_ai_btn.icon = ft.Icons.ROCKET_LAUNCH
             call_ai_btn.update()
             return
 
@@ -311,16 +341,17 @@ def main(page: ft.Page):
             def reset_button():
                 call_ai_btn.disabled = False
                 call_ai_btn.text = "Call AI"
-                call_ai_btn.icon = ft.icons.ROCKET_LAUNCH
+                call_ai_btn.icon = ft.Icons.ROCKET_LAUNCH
                 call_ai_btn.update()
 
-            page.run_threadsafe(reset_button)
+            page.run_thread(reset_button)
 
         # 启动监控线程
         Thread(target=monitor_result_file, daemon=True).start()
 
     # 绑定按钮事件
     call_ai_btn.on_click = call_ai
+
 
 # 启动应用
 ft.app(target=main, view=ft.AppView.FLET_APP)

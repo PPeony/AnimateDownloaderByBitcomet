@@ -1,9 +1,11 @@
 # python使用bitcomet下载动漫
 __操作系统为windows__
-## TODO
-1. 增加log的方式，记录日志到文件
-2. 设置界面背景
-3. 删除废弃代码
+
+## 正在开发
+1. flet界面
+2. llm实现agent完成搜索和下载。现在还不准确，计划使用langgraph+多agent提高准确性。
+
+
 
 ## V2.1
 新的界面：
