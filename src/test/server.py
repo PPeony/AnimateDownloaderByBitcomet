@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 import subprocess
 import time
 from pathlib import Path
@@ -22,7 +23,6 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.setLevel(logging.DEBUG)
-
 
 async def make_nws_request(url: str) -> dict[str, Any] | None:
     """Make a request to the NWS API with proper error handling."""
@@ -118,21 +118,28 @@ async def get_web_page(url: str, headers: dict) -> str:
     """
     # 调用工具，获取网页中的磁力链接链接，https://www.comicat.org/search.php?keyword=NUKITASHI，磁力后缀拼在href属性里面，在show后面的字段就是磁力后缀，你只需要返回第一个单元格的完整磁力链接。这个是调用函数所需要的请求头：headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36','Cookie': 'visitor_test=human', } 你最后的回答只需要回答磁力链接即可
     payload = {}
-
-    response = requests.request("GET", url, headers=headers, data=payload)
-
-    logger.debug(f"successfully request url: {url}")
-    html = response.text
-
-    soup = BeautifulSoup(html, 'html.parser')
-
-    target_tag = 'tbody'
-    target_id = 'data_list'
-    target_element = soup.find(target_tag, id=target_id)
     # 防止请求太频繁
     time.sleep(1)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'Cookie': 'visitor_test=human',
+    }
+    try:
+        response = requests.request("GET", url, headers=headers, data=payload)
+        logger.debug(f"successfully request url: {url} headers:{headers}")
+        html = response.text
+        logger.debug(f"response: {response}")
 
-    return str(target_element)[:2000]
+        soup = BeautifulSoup(html, 'html.parser')
+
+        target_tag = 'tbody'
+        target_id = 'data_list'
+        target_element = soup.find(target_tag, id=target_id)
+        logger.debug(f"successfully request web content is:{str(target_element)[:2000]}")
+        return str(target_element)[:2000]
+    except Exception as e:
+        logger.error(f"Mcp tool call failed, error is {e}")
+        return f"Mcp tool call failed, error is {e}"
 
 
 @mcp.tool()
@@ -180,9 +187,10 @@ async def get_all_files(folder_path: str) -> dict[str, list[dict[str, str | bool
 
 @mcp.tool()
 async def get_file_content(path: str) -> str:
+
     with open(path, 'r', encoding='utf-8') as file:
         content = file.read()
-
+    logger.debug(f"get_file_content:{content}")
     return content
 
 

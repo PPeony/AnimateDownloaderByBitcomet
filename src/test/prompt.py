@@ -14,7 +14,7 @@ Expected output: The expected output uses the following format:
 Step Answer: [json]
 ```
 
-Step 2: Search for magnet links on the webpage for each element in the JSON array obtained from the first step. Therefore, you need to call this tool multiple times. Searched web pages: https://www.comicat.org/search.php?keyword={search_name} . This is request header: {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36','Cookie': 'visitor_test=human', } 
+Step 2: Search for magnet links on the webpage for each element in the JSON array obtained from the first step. Therefore, you need to call this tool multiple times. Searched web pages: https://www.comicat.org/search.php?keyword={search_name} . You MUST ADD request header: {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36','Cookie': 'visitor_test=human', } 
 The search_name in the url is the search_name in the configuration file that is read in the first step.
 The tool will return some HTML information on the page, and the magnet link information is in the href attribute. The field after "show-" is the magnet suffix. You need to concatenate the prefix of the magnetic link for linking.
 The tool may truncate the webpage, and you need to search for the desired results from the complete tags.

@@ -5,7 +5,7 @@ __操作系统为windows__
 1. flet界面
 2. llm实现agent完成搜索和下载。现在还不准确，计划使用langgraph+多agent提高准确性。
 ![flet_view](https://github.com/PPeony/AnimateDownloaderByBitcomet/blob/use_mcp/doc/pic/flet-view.png)
-
+3. 基于deer-flow二次开发：https://github.com/PPeony/deer-flow/tree/add_task
 
 ## V2.1
 新的界面：
