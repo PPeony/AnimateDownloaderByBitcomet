@@ -146,14 +146,16 @@ async def get_web_page(url: str, headers: dict) -> str:
 async def call_bitcomet(magnet: str) -> bool:
     """
     call bitcomet to start download
-    :param magnet: the magnet to download    :return:  is successful
+    :param magnet: the magnet to download
+    :return:  is successful
     """
+    logger.debug(f'start-call bitcomet url:{magnet}')
     command = f"\"C:\\Program Files\\BitComet\\bitcomet\" --url {magnet} -s --tray"
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     if result.stderr != "":
-        logging.debug('call bitcomet error: ' + command)
+        logger.debug('call bitcomet error: ' + command)
         return False
-    logging.debug(f'Successfully call bitcomet url:{magnet}')
+    logger.debug(f'Successfully call bitcomet url:{magnet}')
     return True
 
 
