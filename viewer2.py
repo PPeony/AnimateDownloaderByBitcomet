@@ -1,3 +1,5 @@
+import logging
+
 import flet as ft
 from threading import Event
 from dataclasses import dataclass
@@ -7,7 +9,7 @@ import os
 import time
 from threading import Thread
 
-from utils import log, call_ai
+from viewer_utils import mylog, call_ai
 
 
 # https://flet.dev/docs/controls/view/
@@ -149,11 +151,11 @@ def main(page: ft.Page):
             if check_done():
                 # 下载完成
                 page.run_thread(lambda n=task.row.cells[0].content.value: update_row_status(n, "下载完成", "green"))
-                log(f"✅ {task.row.cells[0].content.value} 下载完成", log_area)
+                mylog(f"✅ {task.row.cells[0].content.value} 下载完成", log_area)
                 break
         else:
             if not check_done():
-                log(f"⏰ {task.row.cells[0].content.value} 下载超时或未完成", log_area)
+                mylog(f"⏰ {task.row.cells[0].content.value} 下载超时或未完成", log_area)
 
         # 清理任务
         if task.row.cells[0].content.value in monitoring_tasks:
@@ -166,19 +168,19 @@ def main(page: ft.Page):
         start_btn.icon = ft.Icons.HOURGLASS_EMPTY
         start_btn.update()
 
-        log("开始执行下载任务...")
+        mylog("开始执行下载任务...")
 
         try:
             result = download(config_data)  # 调用你的下载函数
         except Exception as ex:
-            log(f"❌ 下载函数出错：{str(ex)}", log_area)
+            mylog(f"❌ 下载函数出错：{str(ex)}", log_area)
             start_btn.disabled = False
             start_btn.text = "开始下载"
             start_btn.icon = ft.Icons.PLAY_ARROW
             start_btn.update()
             return
 
-        log("下载请求已发出，正在处理结果...", log_area)
+        mylog("下载请求已发出，正在处理结果...", log_area)
 
         # 处理返回结果，更新表格
         downloaded_paths = []
@@ -189,11 +191,11 @@ def main(page: ft.Page):
 
             if magnet and path:
                 update_row_status(name, "下载中", "blue")
-                log(f"📘 {name} 下载任务已启动", log_area)
+                mylog(f"📘 {name} 下载任务已启动", log_area)
                 downloaded_paths.append(path)
             else:
                 update_row_status(name, "下载失败", "yellow")
-                log(f"❌ {name} 下载失败", log_area)
+                mylog(f"❌ {name} 下载失败", log_area)
 
         # 启动监控线程
         for res in result:
@@ -236,12 +238,12 @@ def main(page: ft.Page):
         log_area,
     )
 
-    log("系统就绪，点击“开始下载”启动任务", log_area)
+    mylog("系统就绪，点击“开始下载”启动任务", log_area)
 
     # 绑定按钮事件
     call_ai_btn.on_click = lambda e: call_ai(
         page=page,
-        log_func=log,
+        log_func=mylog,
         call_ai_btn=call_ai_btn,
         log_area=log_area,
     )
