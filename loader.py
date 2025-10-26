@@ -264,6 +264,17 @@ def move_file(source_dir, destination_dir, filename):
         print(f"文件 {filename} 不存在于目录 {source_dir} 中！")
 
 
+def move_file_src_to_dest(source_abs_filename, destination_dir):
+    if os.path.isfile(source_abs_filename):
+        # 移动文件到目标目录
+        if not os.path.exists(destination_dir):
+            os.makedirs(destination_dir)
+        shutil.copy2(source_abs_filename, destination_dir)
+        print(f"文件 {source_abs_filename} 移动成功！")
+    else:
+        print(f"文件 {source_abs_filename} 不存在于目录中！")
+
+
 def call_bitcomet(magnet):
     command = f"\"C:\\Program Files\\BitComet\\bitcomet\" --url {magnet} -s --tray"
     result = subprocess.run(command, shell=True, capture_output=True, text=True)

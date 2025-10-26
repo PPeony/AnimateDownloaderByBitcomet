@@ -9,7 +9,7 @@ import os
 import time
 from threading import Thread
 
-from viewer_utils import mylog, call_ai
+from viewer_utils import mylog, call_ai, gb_download_result, handle_res, update_row_status
 
 
 # https://flet.dev/docs/controls/view/
@@ -120,20 +120,11 @@ def main(page: ft.Page):
         task_map[item["name"]] = item
 
     # 下载按钮
-    start_btn = ft.ElevatedButton("开始下载", icon=ft.Icons.PLAY_ARROW)
+    start_btn = ft.ElevatedButton("开始下载监控", icon=ft.Icons.PLAY_ARROW)
     call_ai_btn = ft.ElevatedButton("Call AI", icon=ft.Icons.ROCKET_LAUNCH, color=ft.Colors.DEEP_PURPLE)
+    handle_res_btn = ft.ElevatedButton("处理结果", icon=ft.Icons.POLL)
     # 日志输出框
     log_area = ft.Column([], scroll=ft.ScrollMode.ALWAYS, height=100, width=500)
-
-    # 更新某行的状态和颜色
-    def update_row_status(name: str, status: str, color: str):
-        for row in rows:
-            if row.cells[0].content.value == name:
-                row.color = color
-                row.cells[5].content.value = status
-                row.cells[5].content.color = "white" if color else "black"
-                break
-        datatable.update()
 
     # 监控单个文件是否下载完成
     def monitor_file(task: AnimeTask, file_path: str):
@@ -150,7 +141,7 @@ def main(page: ft.Page):
 
             if check_done():
                 # 下载完成
-                page.run_thread(lambda n=task.row.cells[0].content.value: update_row_status(n, "下载完成", "green"))
+                page.run_thread(lambda n=task.row.cells[0].content.value: update_row_status(datatable,rows,n, "下载完成", "green"))
                 mylog(f"✅ {task.row.cells[0].content.value} 下载完成", log_area)
                 break
         else:
@@ -164,24 +155,18 @@ def main(page: ft.Page):
     # 开始下载的处理函数
     def start_download(e):
         start_btn.disabled = True
-        start_btn.text = "下载中..."
+        start_btn.text = "下载监控中"
         start_btn.icon = ft.Icons.HOURGLASS_EMPTY
         start_btn.update()
 
-        mylog("开始执行下载任务...")
+        mylog("开始下载监控...", log_area)
 
-        try:
-            result = download(config_data)  # 调用你的下载函数
-        except Exception as ex:
-            mylog(f"❌ 下载函数出错：{str(ex)}", log_area)
-            start_btn.disabled = False
-            start_btn.text = "开始下载"
-            start_btn.icon = ft.Icons.PLAY_ARROW
-            start_btn.update()
-            return
-
-        mylog("下载请求已发出，正在处理结果...", log_area)
-
+        cnt = 0
+        while gb_download_result is None and cnt < 100:
+            # max 500s
+            time.sleep(5)
+            cnt += 1
+        result = json.loads(gb_download_result)
         # 处理返回结果，更新表格
         downloaded_paths = []
         for res in result:
@@ -190,11 +175,11 @@ def main(page: ft.Page):
             path = res.get("path", "")
 
             if magnet and path:
-                update_row_status(name, "下载中", "blue")
+                update_row_status(datatable,rows,name, "下载中", "blue")
                 mylog(f"📘 {name} 下载任务已启动", log_area)
                 downloaded_paths.append(path)
             else:
-                update_row_status(name, "下载失败", "yellow")
+                update_row_status(datatable,rows,name, "下载失败", "yellow")
                 mylog(f"❌ {name} 下载失败", log_area)
 
         # 启动监控线程
@@ -229,6 +214,7 @@ def main(page: ft.Page):
             [
                 start_btn,
                 call_ai_btn,
+                handle_res_btn,
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             spacing=20,
@@ -246,6 +232,14 @@ def main(page: ft.Page):
         log_func=mylog,
         call_ai_btn=call_ai_btn,
         log_area=log_area,
+    )
+
+    handle_res_btn.on_click = lambda e: handle_res(
+        config_path=config_path,
+        new_json=gb_download_result,
+        datatable=datatable,
+        rows=rows,
+        log_area=log_area
     )
 
 
